@@ -20,23 +20,30 @@ router.get("/", (req, res) => {
 });
 router.post("/", (req, res) => {
   const date_of_creation = new Date();
-  if (req.session.username === req.body.username) {
-    res.send({ status: 0, debug_data: "username already exists" });
-  } else {
-    const { id, username, password } = req.body;
-    const sql = `INSERT INTO usertable VALUES(?,?,?,?)`;
-    connector.query(
-      sql,
-      [id, username, password, date_of_creation],
-      (err, results, fields) => {
-        if (err) {
-          res.json(err);
-        } else {
-          res.send({ status: 1, data: "user created" });
-        }
+  const { id, username, password } = req.body;
+  const checkingsql = `SELECT * FROM usertable WHERE username =?`;
+  connector.query(checkingsql, [username], (err, results, fields) => {
+    if (err) {
+      res.json(err);
+    } else {
+      if (results.length > 0) {
+        res.json({ status: 0, data: "username already exists" });
+      } else {
+        const sql = "INSERT INTO usertable VALUES(?,?,?,?)";
+        connector.query(
+          sql,
+          [id, username, password, date_of_creation],
+          function (err, results, fields) {
+            if (err) {
+              res.json(err);
+            } else {
+              res.json({ status: 1, data: "user created" });
+            }
+          }
+        );
       }
-    );
-  }
+    }
+  });
 });
 router.delete("/:id", (req, res) => {
   const sql = `DELETE FROM usertable WHERE id=?`;
